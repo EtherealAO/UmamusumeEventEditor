@@ -18,6 +18,7 @@ watch(selectedEvent, (story) => {
         <EventList :cardId="103301" @eventSelected="(selected) => selectedEvent.Apply(selected)" />
     </div>
     <div id="RightPart" class="container rounded" style="background-color: blanchedalmond;display: table-row;">
-        <Choice v-for="choice in selectedEvent.Choices" :choice="choice" />
+        <Choice v-if="selectedEvent.Id != 0" v-for="choice in selectedEvent.Choices" :choice="choice"
+            :selectedEvent="selectedEvent" />
     </div>
 </template>

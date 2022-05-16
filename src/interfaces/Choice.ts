@@ -7,4 +7,9 @@ export class Choice {
         this.SuccessEffect = "";
         this.FailedEffect = ""
     }
+    Apply(choice: Choice) {
+        this.Option = choice.Option;
+        this.SuccessEffect = choice.SuccessEffect;
+        this.FailedEffect = choice.FailedEffect;
+    }
 }
