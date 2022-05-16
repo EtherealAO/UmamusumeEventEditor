@@ -1,14 +1,16 @@
-import { Choice } from "./Choice"
+import type { Choice } from "./Choice"
 export class Story {
-    Id: number
-    Name: string
-    TriggerName: string
-    Choices: Choice[]
-    constructor() {
-        this.Id = 0;
-        this.Name = "";
-        this.TriggerName = "";
-        this.Choices = [new Choice()]
+    Id: number = 0;
+    Name: string = "";
+    TriggerName: string = "";
+    Choices: Choice[] = [];
+    static Create(id: number, name: string, triggerName: string, choices: Choice[]): Story {
+        var instance = new Story();
+        instance.Id = id;
+        instance.Name = name;
+        instance.TriggerName = triggerName;
+        instance.Choices = choices;
+        return instance;
     }
     Apply(story: Story) {
         this.Id = story.Id;
