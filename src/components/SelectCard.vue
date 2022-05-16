@@ -1,6 +1,6 @@
 <script setup lang="ts">
-const { cardId } = defineProps({ cardId: String });
-var url = `https://assets.shuise.net/UmamusumeEventEditor/public/img/icon/chr_icon_${cardId!.substring(0, 4)}_${cardId}_02.png`;
+const { cardId } = defineProps({ cardId: Number });
+var url = `https://assets.shuise.net/UmamusumeEventEditor/public/img/icon/chr_icon_${cardId!.toString().substring(0, 4)}_${cardId}_02.png`;
 </script>
 
 <template>
@@ -12,7 +12,6 @@ var url = `https://assets.shuise.net/UmamusumeEventEditor/public/img/icon/chr_ic
             <option>决胜服B</option>
             <option>S卡A</option>
             <option>S卡B</option>
-            <option>{{ test }}</option>
         </select>
         <select style="width:150px;margin-top:85px;display: inline;position:absolute;margin-left: 10px;"
             class="form-select">
