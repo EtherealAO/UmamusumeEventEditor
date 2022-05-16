@@ -1,5 +1,13 @@
 <script setup lang="ts">
+import { Tooltip } from 'bootstrap';
+import { onMounted, ref } from 'vue';
+
 const { choice } = defineProps(['choice'])
+
+const choiceNameInputBox = ref(null);
+onMounted(() => {
+    new Tooltip(choiceNameInputBox.value!);
+});
 </script>
 <template>
     <div id="Choice" class="border border-primary"

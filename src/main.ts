@@ -13,6 +13,12 @@ app.config.globalProperties.Events = {
             Name: "Test",
             TriggerName: "TN",
             Choices: [{ Option: "opt", SuccessEffect: "SE", FailedEffect: "FE" }]
+        },
+        {
+            Id: 2,
+            Name: "Test2",
+            TriggerName: "TN",
+            Choices: [{ Option: "opt2", SuccessEffect: "SE2", FailedEffect: "FE2" }]
         }
     ]
 };
