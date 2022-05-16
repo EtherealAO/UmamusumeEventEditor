@@ -11,7 +11,7 @@ function onClick(story: Story) {
 </script>
 
 <template>
-    <div id="eventList" class=" list-group rounded">
+    <div id="eventList" class="list-group rounded shadow-sm">
         <a id="eventName" href="#" class="list-group-item list-group-item-action" v-for="story in Events[cardId!]"
             :key="story.Id" @click="onClick(story); $emit('eventSelected', selectedEvent)"
             :class="{ active: selectedEvent.Id == story.Id }">
@@ -22,7 +22,7 @@ function onClick(story: Story) {
 
 <style scoped>
 div#eventList {
-    background-color: aqua;
+    /* background-color: aqua; */
     margin-top: 20px;
     margin-bottom: 20px;
     max-height: 500px;

@@ -34,10 +34,10 @@ onMounted(() => {
 });
 </script>
 <template>
-    <div id="choice" class="border border-primary">
+    <div id="choice">
         <div class="row">
             <div id="effectPart">
-                <div id="effectBox" class="list-group rounded">
+                <div id="effectBox" class="list-group shadow-sm rounded ms-1">
                     <a href="#" v-for="effect in choice.Effects" class="list-group-item list-group-item-action" :class="{
                         active: effect != '' && effect == selectedEffect
                     }" @click="onClick(effect)" :style="`height: ${240 / choice.Effects.length}px;`">
@@ -69,14 +69,11 @@ onMounted(() => {
 
 <style scoped>
 #choice {
-    background-color: azure;
+    /*background-color: azure;*/
     width: 600px;
     height: 250px;
-    position: absolute;
-}
-
-div>.row {
-    margin-top: 7px;
+    /*position: absolute;*/
+    display: inherit;
 }
 
 #effectPart {
@@ -103,6 +100,6 @@ textarea.form-control {
     margin-top: 2px;
     box-sizing: border-box;
     height: 100%;
-    max-height: 160px;
+    max-height: 150px;
 }
 </style>
