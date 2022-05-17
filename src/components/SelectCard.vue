@@ -1,5 +1,13 @@
 <script setup lang="ts">
+import { ref } from 'vue';
+
 const { cardId } = defineProps({ cardId: Number });
+var cardSelection = ref(0);
+var categorySelection = ref("all")
+
+function onCategoryChanged(event: any) {
+    categorySelection.value = event.target.value
+}
 </script>
 
 <template>
@@ -7,17 +15,18 @@ const { cardId } = defineProps({ cardId: Number });
         <img id="icon"
             :src="`https://assets.shuise.net/UmamusumeEventEditor/public/img/icon/chr_icon_${cardId!.toString().substring(0, 4)}_${cardId}_02.png`"
             width="115" height="128" />
-        <select id="cardSelect" class="form-select">
+        <select id="cardSelect" class="form-select" @change="$emit('cardChanged')">
             <option>决胜服A</option>
             <option>决胜服B</option>
             <option>S卡A</option>
             <option>S卡B</option>
         </select>
-        <select id="categorySelect" class="form-select">
-            <option>全部事件</option>
-            <option>决胜服事件</option>
-            <option>通常事件</option>
-            <option>通用事件</option>
+        <select id="categorySelect" class="form-select"
+            @change="onCategoryChanged($event); $emit('categoryChanged', categorySelection)">
+            <option value='all'>全部事件</option>
+            <option value='special'>决胜服事件</option>
+            <option value='common'>通常事件</option>
+            <option value='universal'>通用事件</option>
         </select>
     </div>
 </template>

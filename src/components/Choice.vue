@@ -81,7 +81,9 @@ onMounted(() => {
 }
 
 #effectBox {
-    max-height: 233px;
+    min-width: 400px;
+    max-width: 400px;
+    max-height: 240px;
     overflow: hidden;
     overflow-y: auto;
 }

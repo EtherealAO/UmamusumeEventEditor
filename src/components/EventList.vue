@@ -2,17 +2,18 @@
 import { Story } from '@/interfaces/Story';
 import { reactive } from 'vue';
 
-const { cardId } = defineProps({ cardId: Number })
+const { events } = defineProps(['events'])
 const selectedEvent: Story = reactive(new Story())
 
 function onClick(story: Story) {
+    console.log(`child: ${events.length}`)
     selectedEvent.Apply(story)
 }
 </script>
 
 <template>
     <div id="eventList" class="list-group rounded shadow-sm">
-        <a id="eventName" href="#" class="list-group-item list-group-item-action" v-for="story in Events[cardId!]"
+        <a id="eventName" href="#" class="list-group-item list-group-item-action" v-for="story in events"
             :key="story.Id" @click="onClick(story); $emit('eventSelected', selectedEvent)"
             :class="{ active: selectedEvent.Id == story.Id }">
             {{ story.Name }}

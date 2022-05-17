@@ -5,36 +5,50 @@ import App from "./App.vue";
 import { Story } from "./interfaces/Story";
 import { Choice } from "./interfaces/Choice";
 
-fetch("https://assets.shuise.net/UmamusumeEventEditor/public/data/deserialized/editorevents.json").then(async res => {
+(async () => {
+    var res = await fetch("https://assets.shuise.net/UmamusumeEventEditor/public/data/deserialized/editorevents.json")
     var json = await res.json()
-    for (var i = 0; i < json["Supports"].length; ++i) {
-        console.log(json["Supports"][i])
+    var supportEvents: { [cardId: number]: Story[]; } = [];
+    for (var i in json.Supports) {
+        var index = Number.parseInt(i)
+        var events = json.Supports[i];
+        for (var event of events) {
+            var choices: Choice[] = [];
+            for (var choice of event.Choices) {
+                choices.push(Choice.Create(choice.Option, choice.SuccessEffect, choice.FailedEffect))
+            }
+            if (supportEvents[index] == null)
+                supportEvents[index] = []
+            supportEvents[index].push(Story.Create(event.Id, event.Name, event.TriggerName, choices))
+        }
     }
-    for (var i = 0; i < json["Characters"].length; ++i) {
-
+    var characterEvents: { [cardId: number]: Story[]; } = [];
+    for (var i in json.Characters) {
+        var index = Number.parseInt(i)
+        var events = json.Characters[i];
+        for (var event of events) {
+            var choices: Choice[] = [];
+            for (var choice of event.Choices) {
+                choices.push(Choice.Create(choice.Option, choice.SuccessEffect, choice.FailedEffect))
+            }
+            if (characterEvents[index] == null)
+                characterEvents[index] = []
+            characterEvents[index].push(Story.Create(event.Id, event.Name, event.TriggerName, choices))
+        }
     }
-})
 
-const app = createApp(App);
-app.config.globalProperties.Events = {
-    103301: [
-        Story.Create(1, "雲の向こう、宙のかなた", "アドマイヤベガ", [
-            Choice.Create("力になれたみたいだね", "パワー(力量)+10、スキルpt+ 15", ""),
-            Choice.Create("観測のコツを伝えてあげたら？", "『仕掛け抜群』のヒントLv+1", "")
-        ]),
-        Story.Create(2, "アヤベさんのサンドウィッチ", "アドマイヤベガ", [
-            Choice.Create("無難な具材を勧める", "「直線巧者」のヒントLv+2", ""),
-            Choice.Create("珍品（肉）を勧めてみる！", "やる気+1、パワー+15、「直線一気」のヒントLv+2", "やる気−1、パワー+10"),
-            Choice.Create("珍品（魚）を勧めてみる！", "やる気+1、賢さ+15、「中距離直線◯」のヒントLv+2", "やる気−1、賢さ+10"),
-            Choice.Create("珍品（野菜）を勧めてみる！", "やる気+1、スピード+15、「隠れ蓑」のヒントLv+2", "やる気−1、スピード+10")
-        ])
-    ]
-};
-app.provide('Events', app.config.globalProperties.Events)
-app.mount("#app");
+    const app = createApp(App);
+    app.config.globalProperties.supportEvents = supportEvents;
+    app.provide('supportEvents', app.config.globalProperties.supportEvents)
+    app.config.globalProperties.characterEvents = characterEvents;
+    app.provide('characterEvents', app.config.globalProperties.characterEvents)
+    app.mount("#app");
+})()
+
 
 declare module '@vue/runtime-core' {
     interface ComponentCustomProperties {
-        Events: { [cardId: number]: Story[]; };
+        supportEvents: { [cardId: number]: Story[]; };
+        characterEvents: { [cardId: number]: Story[]; };
     }
 }
