@@ -5,6 +5,11 @@ import App from "./App.vue";
 import { Story } from "./interfaces/Story";
 import { Choice } from "./interfaces/Choice";
 
+fetch("https://assets.shuise.net/UmamusumeEventEditor/public/data/deserialized/events.json").then(async res => {
+    var json = await res.json()
+    console.log(json)
+})
+
 const app = createApp(App);
 app.config.globalProperties.Events = {
     103301: [
