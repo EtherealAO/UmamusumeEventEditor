@@ -24,12 +24,14 @@ const selectedEvent = reactive(new Story())
 <style scoped>
 div#eventEditor {
     margin: 10%;
-    min-height: 600px;
-    min-width: 1000px;
+    height: fit-content !important;
+    width: fit-content !important;
+    overflow: auto;
 }
 
 div#leftPart {
     /*background-color: pink;*/
+    margin-right: 10px;
     width: min-content;
     float: left;
 }

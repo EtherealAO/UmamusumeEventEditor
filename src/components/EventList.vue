@@ -27,7 +27,7 @@ div#eventList {
     margin-bottom: 20px;
     max-height: 500px;
     overflow: hidden;
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 a#eventName {

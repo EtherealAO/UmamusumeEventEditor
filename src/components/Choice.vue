@@ -51,8 +51,8 @@ onMounted(() => {
                 <div class="input-group">
                     <input type="text" class="form-control" placeholder="Select Index" v-model="inputSelectIndex"
                         style="margin-top: 2px;">
-                    <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                        style="margin-top: 2px;"> {{ selectedState }} </button>
+                    <button id="stateDropdownToggleButton" class="btn btn-outline-primary dropdown-toggle" type="button"
+                        data-bs-toggle="dropdown" style="margin-top: 2px;"> {{ selectedState }} </button>
                     <ul class="dropdown-menu dropdown-menu-end" style="min-width: min-content;">
                         <li v-for="(state, index) in states">
                             <a class="dropdown-item" href="#" @click="() => selectedState = states[index]">
@@ -83,11 +83,15 @@ onMounted(() => {
 #effectBox {
     max-height: 233px;
     overflow: hidden;
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 #editPart {
     width: 44%;
+}
+
+button#stateDropdownToggleButton {
+    width: 130px;
 }
 
 input .form-control {
