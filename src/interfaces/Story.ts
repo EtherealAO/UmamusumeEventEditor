@@ -12,10 +12,11 @@ export class Story {
         instance.Choices = choices;
         return instance;
     }
-    Apply(story: Story) {
+    Apply(story: Story): Story {
         this.Id = story.Id;
         this.Name = story.Name;
         this.TriggerName = story.TriggerName;
         this.Choices = story.Choices;
+        return this;
     }
 }

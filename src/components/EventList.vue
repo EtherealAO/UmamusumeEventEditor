@@ -1,23 +1,22 @@
 <script setup lang="ts">
 import { Story } from '@/interfaces/Story';
-import { reactive } from 'vue';
+import { reactive, shallowReactive } from 'vue';
 
 const { events } = defineProps(['events'])
-const selectedEvent: Story = reactive(new Story())
+const selectedEvent: Story = shallowReactive(new Story())
 
 function onClick(story: Story) {
-    console.log(`child: ${events.length}`)
     selectedEvent.Apply(story)
 }
 </script>
 
 <template>
     <div id="eventList" class="list-group rounded shadow-sm">
-        <a id="eventName" href="#" class="list-group-item list-group-item-action" v-for="story in events"
+        <span id="eventName" class="list-group-item list-group-item-action clickable" v-for="story in events"
             :key="story.Id" @click="onClick(story); $emit('eventSelected', selectedEvent)"
             :class="{ active: selectedEvent.Id == story.Id }">
             {{ story.Name }}
-        </a>
+        </span>
     </div>
 </template>
 
@@ -31,7 +30,12 @@ div#eventList {
     overflow-y: auto;
 }
 
-a#eventName {
+span#eventName {
     width: 300px;
+}
+
+span.clickable {
+    user-select: none;
+    cursor: pointer;
 }
 </style>

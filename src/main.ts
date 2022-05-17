@@ -1,9 +1,10 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap";
 import { createApp } from "vue";
-import App from "./App.vue";
+import Menus from 'vue3-menus';
 import { Story } from "./interfaces/Story";
 import { Choice } from "./interfaces/Choice";
+import App from "./App.vue";
 
 (async () => {
     var res = await fetch("https://assets.shuise.net/UmamusumeEventEditor/public/data/deserialized/editorevents.json")
@@ -42,6 +43,8 @@ import { Choice } from "./interfaces/Choice";
     app.provide('supportEvents', app.config.globalProperties.supportEvents)
     app.config.globalProperties.characterEvents = characterEvents;
     app.provide('characterEvents', app.config.globalProperties.characterEvents)
+
+    app.use(Menus);
     app.mount("#app");
 })()
 

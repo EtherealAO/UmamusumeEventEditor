@@ -3,6 +3,9 @@ export class Choice {
     SuccessEffect: string = "";
     FailedEffect: string = "";
     Effects: string[] = [];
+    //SuccessChoice
+    SelectIndex: number = 0;
+    State: number = 0;
     static Create(option: string, se: string, fe: string): Choice {
         var instance = new Choice();
         instance.Option = option;

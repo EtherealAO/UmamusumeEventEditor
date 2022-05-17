@@ -1,22 +1,27 @@
 <script setup lang="ts">
+import { computed } from '@vue/reactivity';
 import { Tooltip } from 'bootstrap';
 import { onMounted, ref, watch } from 'vue';
 
 const { choice, selectedEvent } = defineProps(['choice', 'selectedEvent'])
-const states = {
+const states: { [index: number]: string } = {
     0: '0(失败)',
     1: '1(成功)',
     2: '2(大成功)',
     2147483647: '∞(不确定的)'
 }
+const scenarios: { [index: number]: string } = {
+    0: '0(通用)',
+    2: '2(URA)',
+    4: '4(巅峰杯)'
+}
 const selectedState = ref("请选择State")
+const selectedScenario = ref("剧本")
 const selectedEffect = ref("")
 const inputSelectIndex = ref(null)
 const inputEffect = ref("")
+const textareaDisabledTip = ref("请先选择选项和剧本")
 
-function onClick(effect: string) {
-    selectedEffect.value = effect
-}
 watch(selectedEffect, (i) => {
     inputEffect.value = selectedEffect.value
     inputSelectIndex.value = null
@@ -28,40 +33,85 @@ watch(selectedEvent, () => {
     inputEffect.value = ""
 })
 
+const isTextareaDisabled = computed(() => {
+    return textareaDisabledTip.value != ''
+})
 const choiceNameInputBox = ref(null);
+const textarea = ref(null)
+var textareaTooltip: any = null!
 onMounted(() => {
     new Tooltip(choiceNameInputBox.value!);
+    textareaTooltip = new Tooltip(textarea.value!);
 });
+watch([selectedEffect, selectedScenario], () => {
+    var effectNotSelect = selectedEffect.value == ""
+    var scenarioNotSelect = selectedScenario.value == "剧本"
+    if (effectNotSelect && scenarioNotSelect) {
+        textareaDisabledTip.value = "请先选择选项和剧本"
+    } else if (effectNotSelect) {
+        textareaDisabledTip.value = "请选择选项"
+    } else if (scenarioNotSelect) {
+        textareaDisabledTip.value = "请选择剧本"
+    } else {
+        textareaDisabledTip.value = ""
+        textareaTooltip.dispose()
+    }
+})
+function onClick(effect: string) {
+    selectedEffect.value = effect
+}
+function onStateChange(state: number) {
+    selectedState.value = states[state]
+}
+function onScenarioChange(scenario: number) {
+    console.log(scenario)
+    selectedScenario.value = scenarios[scenario]
+}
 </script>
 <template>
     <div id="choice">
         <div class="row">
             <div id="effectPart">
                 <div id="effectBox" class="list-group shadow-sm rounded ms-1">
-                    <a href="#" v-for="effect in choice.Effects" class="list-group-item list-group-item-action" :class="{
-                        active: effect != '' && effect == selectedEffect
-                    }" @click="onClick(effect)" :style="`height: ${240 / choice.Effects.length}px;`">
+                    <span v-for="effect in choice.Effects" class="list-group-item list-group-item-action clickable "
+                        :class="{
+                            active: effect != '' && effect == selectedEffect
+                        }" @click="onClick(effect)" :style="`height: ${240 / choice.Effects.length}px;`">
                         {{ effect }}
-                    </a>
+                    </span>
                 </div>
             </div>
             <div id="editPart">
                 <input class="form-control" data-bs-toggle="tooltip" title="目前还没决定好是否允许汉化" ref="choiceNameInputBox"
                     type="text" :value="choice.Option" readonly>
                 <div class="input-group">
-                    <input type="text" class="form-control" placeholder="Select Index" v-model="inputSelectIndex"
+                    <input type="text" class="form-control" placeholder="Select Index"
+                        @change="$emit('selectIndexChanged', inputSelectIndex)" v-model="inputSelectIndex"
                         style="margin-top: 2px;">
                     <button id="stateDropdownToggleButton" class="btn btn-outline-primary dropdown-toggle" type="button"
-                        data-bs-toggle="dropdown" style="margin-top: 2px;"> {{ selectedState }} </button>
+                        data-bs-toggle="dropdown" style="margin-top: 2px;">{{ selectedState }}</button>
                     <ul class="dropdown-menu dropdown-menu-end" style="min-width: min-content;">
                         <li v-for="(state, index) in states">
-                            <a class="dropdown-item" href="#" @click="() => selectedState = states[index]">
+                            <span class="dropdown-item clickable"
+                                @click="$emit('stateChanged', index); onStateChange(index)">
                                 {{ state }}
-                            </a>
+                            </span>
+                        </li>
+                    </ul>
+                    <button id="scenarioDropdownToggleButton" class="btn btn-outline-primary dropdown-toggle"
+                        type="button" data-bs-toggle="dropdown" style="margin-top: 2px;">{{ selectedScenario }}</button>
+                    <ul class="dropdown-menu dropdown-menu-end" style="min-width: min-content;">
+                        <li v-for="(scenario, index) in scenarios">
+                            <span class="dropdown-item clickable"
+                                @click="$emit('scenarioChanged', index); onScenarioChange(index)">
+                                {{ scenario }}
+                            </span>
                         </li>
                     </ul>
                 </div>
-                <textarea class="form-control" v-model="inputEffect"></textarea>
+                <textarea class="form-control" @change="$emit('inputEffectChanged', inputEffect)" v-model="inputEffect"
+                    :readonly="isTextareaDisabled" :class="{ disabledTextarea: isTextareaDisabled }"
+                    data-bs-toggle="tooltip" :title="textareaDisabledTip" ref="textarea"></textarea>
             </div>
         </div>
     </div>
@@ -84,16 +134,38 @@ onMounted(() => {
     min-width: 400px;
     max-width: 400px;
     max-height: 240px;
-    overflow: hidden;
-    overflow-y: auto;
+    /*overflow: hidden;
+    overflow-y: auto;*/
 }
 
 #editPart {
     width: 44%;
 }
 
+textarea.disabledTextarea {
+    cursor: not-allowed;
+}
+
+span.clickable {
+    user-select: none;
+    cursor: pointer;
+}
+
+span.active {
+    z-index: 0 !important;
+}
+
+.list-group-item-action:focus,
+.list-group-item-action:hover {
+    z-index: 0 !important;
+}
+
 button#stateDropdownToggleButton {
     width: 130px;
+}
+
+button#scenarioDropdownToggleButton {
+    width: 110px;
 }
 
 input .form-control {
