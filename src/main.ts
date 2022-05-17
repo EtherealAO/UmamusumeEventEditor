@@ -5,9 +5,14 @@ import App from "./App.vue";
 import { Story } from "./interfaces/Story";
 import { Choice } from "./interfaces/Choice";
 
-fetch("https://assets.shuise.net/UmamusumeEventEditor/public/data/deserialized/events.json").then(async res => {
+fetch("https://assets.shuise.net/UmamusumeEventEditor/public/data/deserialized/editorevents.json").then(async res => {
     var json = await res.json()
-    console.log(json)
+    for (var i = 0; i < json["Supports"].length; ++i) {
+        console.log(json["Supports"][i])
+    }
+    for (var i = 0; i < json["Characters"].length; ++i) {
+
+    }
 })
 
 const app = createApp(App);
