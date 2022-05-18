@@ -2,7 +2,7 @@
 import { computed } from '@vue/reactivity';
 import { Tooltip } from 'bootstrap';
 import { onMounted, ref, watch } from 'vue';
-const { choice, selectedEvent } = defineProps(['choice', 'selectedEvent'])
+const { choice, selectedEvent, editingIndex } = defineProps(['choice', 'selectedEvent', 'editingIndex'])
 const states: { [index: number]: string } = {
     0: '0(失败)',
     1: '1(成功)',
@@ -19,7 +19,8 @@ const selectedState = ref("请选择State")
 const selectedScenario = ref("剧本")
 const selectedEffect = ref("")
 const inputSelectIndex = ref(null)
-const inputEffect = ref("")
+const inputEffects = ref(new Map<string, string>())
+const currentEditEffect = ref("")
 const textareaDisabledTip = ref("请先选择选项和剧本")
 const choiceNameInputBox = ref(null);
 const textarea = ref(null)
@@ -33,6 +34,13 @@ function onStateChange(state: number) {
 }
 function onScenarioChange(scenario: number) {
     selectedScenario.value = scenarios[scenario]
+    var previousEdited = inputEffects.value.get(selectedScenario.value)
+    if (previousEdited == undefined) {
+        inputEffects.value.set(selectedScenario.value, selectedEffect.value)
+        currentEditEffect.value = selectedEffect.value
+    } else {
+        currentEditEffect.value = previousEdited
+    }
 }
 const isTextareaDisabled = computed(() => {
     return textareaDisabledTip.value != ''
@@ -41,15 +49,18 @@ onMounted(() => {
     new Tooltip(choiceNameInputBox.value!);
     textareaTooltip = new Tooltip(textarea.value!);
 });
-watch(selectedEffect, (i) => {
-    inputEffect.value = selectedEffect.value
+watch(currentEditEffect, () => {
+    inputEffects.value.set(selectedScenario.value, currentEditEffect.value)
+})
+watch(selectedEffect, () => {
+    if (selectedScenario.value == "剧本") return;
+    inputEffects.value.set(selectedScenario.value, selectedEffect.value)
     inputSelectIndex.value = null
 })
 watch(selectedEvent, () => {
     selectedState.value = "请选择State"
     selectedEffect.value = ""
     inputSelectIndex.value = null
-    inputEffect.value = ""
 })
 watch([selectedEffect, selectedScenario], () => {
     if (selectedEffect.value != "" && selectedScenario.value != "剧本" && textareaDisabledTip.value != '') {
@@ -76,14 +87,14 @@ watch([selectedEffect, selectedScenario], () => {
                     type="text" :value="choice.Option" readonly>
                 <div class="input-group">
                     <input type="text" class="form-control" placeholder="Select Index"
-                        @change="$emit('selectIndexChanged', inputSelectIndex)" v-model="inputSelectIndex"
+                        @change="$emit('update:selectIndex', inputSelectIndex)" v-model="inputSelectIndex"
                         style="margin-top: 2px;">
                     <button id="stateDropdownToggleButton" class="btn btn-outline-primary dropdown-toggle" type="button"
                         data-bs-toggle="dropdown" style="margin-top: 2px;">{{ selectedState }}</button>
                     <ul class="dropdown-menu dropdown-menu-end" style="min-width: min-content;">
                         <li v-for="(state, index) in states">
                             <span class="dropdown-item clickable"
-                                @click="$emit('stateChanged', index); onStateChange(index)">
+                                @click="$emit('update:state', index); onStateChange(index)">
                                 {{ state }}
                             </span>
                         </li>
@@ -93,15 +104,17 @@ watch([selectedEffect, selectedScenario], () => {
                     <ul class="dropdown-menu dropdown-menu-end" style="min-width: min-content;">
                         <li v-for="(scenario, index) in scenarios">
                             <span class="dropdown-item clickable"
-                                @click="$emit('scenarioChanged', index); onScenarioChange(index)">
+                                @click="$emit('update:scenario', index); onScenarioChange(index)">
                                 {{ scenario }}
                             </span>
                         </li>
                     </ul>
                 </div>
-                <textarea class="form-control" @change="$emit('inputEffectChanged', inputEffect)" v-model="inputEffect"
-                    :readonly="isTextareaDisabled" :class="{ disabledTextarea: isTextareaDisabled }"
-                    data-bs-toggle="tooltip" :title="textareaDisabledTip" ref="textarea"></textarea>
+                <textarea class="form-control"
+                    @change="inputEffects.set(selectedScenario, currentEditEffect); $emit('update:effect', inputEffects.get(selectedScenario)); $emit('update:editedIndex', editingIndex);"
+                    v-model="currentEditEffect" :readonly="isTextareaDisabled"
+                    :class="{ disabledTextarea: isTextareaDisabled }" data-bs-toggle="tooltip"
+                    :title="textareaDisabledTip" ref="textarea"></textarea>
             </div>
         </div>
     </div>

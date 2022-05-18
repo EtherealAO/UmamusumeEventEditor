@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, reactive, ref, shallowReactive } from "vue";
+import { inject, reactive, ref, shallowReactive, watch } from "vue";
 import { Base64 } from 'js-base64';
 import SelectCard from "./SelectCard.vue";
 import EventList from "./EventList.vue";
@@ -8,14 +8,8 @@ import Toast from "./Toast.vue";
 import { Story } from "@/interfaces/Story";
 import { CustomStory } from "@/interfaces/CustomStory";
 import { ShowToast } from "@/main";
+import { CustomChoice } from "@/interfaces/CustomChoice";
 
-const selectedEvent = shallowReactive(new Story())
-const selectedCard = ref(103301)
-const supportEvents: { [cardId: number]: Story[]; } = inject('supportEvents')!
-const characterEvents: { [cardId: number]: Story[]; } = inject('characterEvents')!
-const isSupport = false;
-const allEvents = isSupport ? supportEvents : characterEvents;
-const events: Story[] = shallowReactive(allEvents[selectedCard.value].concat(allEvents[Number.parseInt(selectedCard.value.toString().substring(0, 4))]))
 const menus = reactive({
     menus: [
         {
@@ -33,7 +27,7 @@ const menus = reactive({
                     ShowToast(Toast, '请先选择事件')
                     return;
                 }
-                localStorage.setItem(editedStory.Id.toString(), JSON.stringify(editedStory))
+                saveToLocalStorage()
             }
         },
         {
@@ -45,12 +39,41 @@ const menus = reactive({
         }
     ]
 })
-
+const selectedEvent = shallowReactive(new Story())
+const selectedCard = ref(103301)
+const supportEvents: { [cardId: number]: Story[]; } = inject('supportEvents')!
+const characterEvents: { [cardId: number]: Story[]; } = inject('characterEvents')!
+const isSupport = false;
+const allEvents = isSupport ? supportEvents : characterEvents;
+const events: Story[] = shallowReactive(allEvents[selectedCard.value].concat(allEvents[Number.parseInt(selectedCard.value.toString().substring(0, 4))]))
 var editedStory = new CustomStory().Initialize(selectedEvent);
-
-function onCardChanged(card: string) {
-    selectedCard.value = Number.parseInt(card)
-}
+var editedChoice: { [index: string]: CustomChoice }[] = []
+var editedIndex = ref<number>(0)
+var editedSelectIndex = ref<number>(0)
+var editedState = ref<number>()
+var editedEffect = ref<string>()
+var editedScenario = ref<number>()
+watch(editedEffect, () => {
+    if (editedScenario.value == undefined || editedEffect.value == undefined) return;
+    var index = editedSelectIndex.value.toString() + editedScenario.value.toString()
+    if (editedChoice[editedIndex.value] == undefined)
+        editedChoice[editedIndex.value] = {}
+    var choice = editedChoice[editedIndex.value][index]
+    if (choice == undefined) {
+        choice = new CustomChoice(editedEffect.value)
+        choice.SelectIndex = editedSelectIndex.value
+        choice.Scenario = editedScenario.value
+        if (editedState.value != undefined)
+            choice.State = editedState.value
+    } else {
+        choice.Effect = editedEffect.value
+        choice.SelectIndex = editedSelectIndex.value
+        choice.Scenario = editedScenario.value
+        if (editedState.value != undefined)
+            choice.State = editedState.value
+    }
+    editedChoice[editedIndex.value][index] = choice
+})
 function onCategoryChanged(category: string) {
     events.length = 0
     switch (category) {
@@ -67,38 +90,36 @@ function onCategoryChanged(category: string) {
             break;
     }
 }
-function onSelectIndexChanged(index: number, selectIndex: string) {
-    editedStory.Choices[index].SelectIndex = Number.parseInt(selectIndex)
-}
-function onStateChanged(index: number, state: string) {
-    editedStory.Choices[index].State = Number.parseInt(state)
-}
-function onInputEffectChanged(index: number, inputEffect: string) {
-    editedStory.Choices[index].Effect = inputEffect
-}
-function onScenarioChanged(index: number, scenario: string) {
-    editedStory.Choices[index].Scenario = Number.parseInt(scenario)
-}
 function onEventSelected(selected: Story) {
+    saveToLocalStorage()
     selectedEvent.Apply(selected)
     editedStory.Initialize(selectedEvent)
+}
+function saveToLocalStorage() {
+    if (editedStory.Id == 0) return
+    for (var i in editedChoice) {
+        for (var j in editedChoice[i]) {
+            if (editedStory.Choices[i] == undefined) editedStory.Choices[i] = []
+            if (editedStory.Choices[i].indexOf(editedChoice[i][j]) == -1)
+                editedStory.Choices[i].push(editedChoice[i][j])
+        }
+    }
+    localStorage.setItem(editedStory.Id.toString(), JSON.stringify(editedStory))
 }
 </script>
  
 <template>
     <div id="eventEditor" class="shadow p-3 mb-5 bg-body rounded vue3-menus-item" v-menus:right="menus">
         <div id="leftPart" class="shadow-sm container rounded">
-            <SelectCard :cardId="selectedCard" @cardChanged="(cardId) => onCardChanged(cardId)"
+            <SelectCard :cardId="selectedCard" v-model:card="selectedCard"
                 @categoryChanged="(category) => onCategoryChanged(category)" />
             <EventList :events="events" @eventSelected="(selected) => onEventSelected(selected)" />
         </div>
         <div id="rightPart" class="shadow-sm container rounded">
             <Choice v-if="selectedEvent.Id != 0" v-for="(choice, index) in selectedEvent.Choices"
-                @selectIndexChanged="(selectIndex) => onSelectIndexChanged(index, selectIndex)"
-                @stateChanged="(state) => onStateChanged(index, state)"
-                @inputEffectChanged="(inputEffect) => onInputEffectChanged(index, inputEffect)"
-                @scenarioChanged="(scenario) => onScenarioChanged(index, scenario)" :choice="choice"
-                :selectedEvent="selectedEvent" :style="`margin-top:${index * 250}px;`" />
+                v-model:selectIndex="editedSelectIndex" v-model:state="editedState" v-model:effect="editedEffect"
+                v-model:scenario="editedScenario" :choice="choice" :selectedEvent="selectedEvent"
+                v-model:editedIndex="editedIndex" :editingIndex="index" :style="`margin-top:${index * 250}px;`" />
         </div>
     </div>
 </template>
