@@ -4,8 +4,10 @@ import { Base64 } from 'js-base64';
 import SelectCard from "./SelectCard.vue";
 import EventList from "./EventList.vue";
 import Choice from "./Choice.vue";
+import Toast from "./Toast.vue";
 import { Story } from "@/interfaces/Story";
 import { CustomStory } from "@/interfaces/CustomStory";
+import { ShowToast } from "@/main";
 
 const selectedEvent = shallowReactive(new Story())
 const selectedCard = ref(103301)
@@ -19,6 +21,24 @@ const menus = reactive({
         {
             label: "保存",
             tip: "到地址栏里",
+            click: () => {
+                window.open(`/#${Base64.encodeURI(JSON.stringify(editedStory))}`, '_self')
+            }
+        },
+        {
+            label: "保存",
+            tip: "到localStorage里",
+            click: () => {
+                if (editedStory.Id == 0) {
+                    ShowToast(Toast, '请先选择事件')
+                    return;
+                }
+                localStorage.setItem(editedStory.Id.toString(), JSON.stringify(editedStory))
+            }
+        },
+        {
+            label: "显示已保存的事件",
+            tip: "只显示localStorage里的",
             click: () => {
                 window.open(`/#${Base64.encodeURI(JSON.stringify(editedStory))}`, '_self')
             }
@@ -86,9 +106,11 @@ function onEventSelected(selected: Story) {
 <style scoped>
 div#eventEditor {
     /*margin: 10%;*/
+    position: relative;
     height: fit-content !important;
     width: fit-content !important;
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 div#leftPart {

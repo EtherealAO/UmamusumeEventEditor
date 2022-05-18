@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Story } from '@/interfaces/Story';
-import { reactive, shallowReactive } from 'vue';
+import { shallowReactive } from 'vue';
 
 const { events } = defineProps(['events'])
 const selectedEvent: Story = shallowReactive(new Story())

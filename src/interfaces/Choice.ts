@@ -12,9 +12,13 @@ export class Choice {
         instance.SuccessEffect = se;
         instance.FailedEffect = fe;
 
-        if (se != '')
+        var haveSuccessEffect = se != ''
+        var haveFailedEffect = fe != ''
+        if (haveSuccessEffect && haveFailedEffect)
             instance.Effects.push(`成功时: ${se}`);
-        if (fe != '')
+        else if (haveSuccessEffect)
+            instance.Effects.push(`${se}`);
+        if (haveFailedEffect)
             instance.Effects.push(`失败时: ${fe}`);
         return instance;
     }

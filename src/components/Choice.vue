@@ -2,7 +2,6 @@
 import { computed } from '@vue/reactivity';
 import { Tooltip } from 'bootstrap';
 import { onMounted, ref, watch } from 'vue';
-
 const { choice, selectedEvent } = defineProps(['choice', 'selectedEvent'])
 const states: { [index: number]: string } = {
     0: '0(失败)',
@@ -15,13 +14,33 @@ const scenarios: { [index: number]: string } = {
     2: '2(URA)',
     4: '4(巅峰杯)'
 }
+
 const selectedState = ref("请选择State")
 const selectedScenario = ref("剧本")
 const selectedEffect = ref("")
 const inputSelectIndex = ref(null)
 const inputEffect = ref("")
 const textareaDisabledTip = ref("请先选择选项和剧本")
+const choiceNameInputBox = ref(null);
+const textarea = ref(null)
+var textareaTooltip: any = null!
 
+function onEffectClick(effect: string) {
+    selectedEffect.value = effect
+}
+function onStateChange(state: number) {
+    selectedState.value = states[state]
+}
+function onScenarioChange(scenario: number) {
+    selectedScenario.value = scenarios[scenario]
+}
+const isTextareaDisabled = computed(() => {
+    return textareaDisabledTip.value != ''
+})
+onMounted(() => {
+    new Tooltip(choiceNameInputBox.value!);
+    textareaTooltip = new Tooltip(textarea.value!);
+});
 watch(selectedEffect, (i) => {
     inputEffect.value = selectedEffect.value
     inputSelectIndex.value = null
@@ -32,41 +51,12 @@ watch(selectedEvent, () => {
     inputSelectIndex.value = null
     inputEffect.value = ""
 })
-
-const isTextareaDisabled = computed(() => {
-    return textareaDisabledTip.value != ''
-})
-const choiceNameInputBox = ref(null);
-const textarea = ref(null)
-var textareaTooltip: any = null!
-onMounted(() => {
-    new Tooltip(choiceNameInputBox.value!);
-    textareaTooltip = new Tooltip(textarea.value!);
-});
 watch([selectedEffect, selectedScenario], () => {
-    var effectNotSelect = selectedEffect.value == ""
-    var scenarioNotSelect = selectedScenario.value == "剧本"
-    if (effectNotSelect && scenarioNotSelect) {
-        textareaDisabledTip.value = "请先选择选项和剧本"
-    } else if (effectNotSelect) {
-        textareaDisabledTip.value = "请选择选项"
-    } else if (scenarioNotSelect) {
-        textareaDisabledTip.value = "请选择剧本"
-    } else {
-        textareaDisabledTip.value = ""
-        textareaTooltip.dispose()
+    if (selectedEffect.value != "" && selectedScenario.value != "剧本" && textareaDisabledTip.value != '') {
+        textareaDisabledTip.value = ''
+        textareaTooltip?.dispose()
     }
 })
-function onClick(effect: string) {
-    selectedEffect.value = effect
-}
-function onStateChange(state: number) {
-    selectedState.value = states[state]
-}
-function onScenarioChange(scenario: number) {
-    console.log(scenario)
-    selectedScenario.value = scenarios[scenario]
-}
 </script>
 <template>
     <div id="choice">
@@ -76,7 +66,7 @@ function onScenarioChange(scenario: number) {
                     <span v-for="effect in choice.Effects" class="list-group-item list-group-item-action clickable "
                         :class="{
                             active: effect != '' && effect == selectedEffect
-                        }" @click="onClick(effect)" :style="`height: ${240 / choice.Effects.length}px;`">
+                        }" @click="onEffectClick(effect)" :style="`height: ${240 / choice.Effects.length}px;`">
                         {{ effect }}
                     </span>
                 </div>

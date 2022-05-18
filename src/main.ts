@@ -48,7 +48,17 @@ import App from "./App.vue";
     app.mount("#app");
 })()
 
-
+export function ShowToast(toast: any, content: string) {
+    var wrapper = document.createElement("div")
+    createApp(toast, {
+        content: content
+    }).mount(wrapper)
+    var editor = document.getElementById("eventEditor")
+    editor!.appendChild(wrapper)
+    setTimeout(() => {
+        editor!.removeChild(wrapper)
+    }, 5000)
+}
 declare module '@vue/runtime-core' {
     interface ComponentCustomProperties {
         supportEvents: { [cardId: number]: Story[]; };
