@@ -5,7 +5,6 @@ import SelectCard from "./SelectCard.vue";
 import EventList from "./EventList.vue";
 import Choice from "./Choice.vue";
 import Toast from "./Toast.vue";
-import { Story } from "@/interfaces/Story";
 import { CustomStory } from "@/interfaces/CustomStory";
 import { ShowToast } from "@/main";
 import { CustomChoice } from "@/interfaces/CustomChoice";
@@ -39,14 +38,15 @@ const menus = reactive({
         }
     ]
 })
-const selectedEvent = shallowReactive(new Story())
+const selectedEvent = shallowReactive(new CustomStory())
 const selectedCard = ref(103301)
-const supportEvents: { [cardId: number]: Story[]; } = inject('supportEvents')!
-const characterEvents: { [cardId: number]: Story[]; } = inject('characterEvents')!
+const supportEvents: { [cardId: number]: CustomStory[]; } = inject('supportEvents')!
+const characterEvents: { [cardId: number]: CustomStory[]; } = inject('characterEvents')!
+const customEvents: { [eventId: number]: CustomStory } = inject('customEvents')!
 const isSupport = false;
 const allEvents = isSupport ? supportEvents : characterEvents;
-const events: Story[] = shallowReactive(allEvents[selectedCard.value].concat(allEvents[Number.parseInt(selectedCard.value.toString().substring(0, 4))]))
-var editedStory = new CustomStory().Initialize(selectedEvent);
+const events: CustomStory[] = shallowReactive(allEvents[selectedCard.value].concat(allEvents[Number.parseInt(selectedCard.value.toString().substring(0, 4))]))
+var editedStory = new CustomStory().Initialize(selectedEvent, customEvents[selectedEvent.Id]);
 var editedChoice: { [index: string]: CustomChoice }[] = []
 var editedIndex = ref<number>(0)
 var editedSelectIndex = ref<number>(0)
@@ -55,7 +55,7 @@ var editedEffect = ref<string>()
 var editedScenario = ref<number>()
 watch(editedEffect, () => {
     if (editedScenario.value == undefined || editedEffect.value == undefined) return;
-    var index = editedSelectIndex.value.toString() + editedScenario.value.toString()
+    var index = editedEffect.value + editedScenario.value.toString()
     if (editedChoice[editedIndex.value] == undefined)
         editedChoice[editedIndex.value] = {}
     var choice = editedChoice[editedIndex.value][index]
@@ -90,16 +90,24 @@ function onCategoryChanged(category: string) {
             break;
     }
 }
-function onEventSelected(selected: Story) {
+function onEventSelected(selected: CustomStory) {
     saveToLocalStorage()
     selectedEvent.Apply(selected)
-    editedStory.Initialize(selectedEvent)
+    editedStory = new CustomStory().Initialize(selectedEvent, customEvents[selectedEvent.Id])
+    editedChoice = []
+    editedIndex.value = 0
+    editedSelectIndex.value = 0
+    editedState.value = undefined
+    editedEffect.value = undefined
+    editedScenario.value = undefined
 }
 function saveToLocalStorage() {
     if (editedStory.Id == 0) return
+    editedStory.Choices = []
     for (var i in editedChoice) {
         for (var j in editedChoice[i]) {
             if (editedStory.Choices[i] == undefined) editedStory.Choices[i] = []
+            console.log(editedChoice[i][j])
             if (editedStory.Choices[i].indexOf(editedChoice[i][j]) == -1)
                 editedStory.Choices[i].push(editedChoice[i][j])
         }
@@ -116,9 +124,9 @@ function saveToLocalStorage() {
             <EventList :events="events" @eventSelected="(selected) => onEventSelected(selected)" />
         </div>
         <div id="rightPart" class="shadow-sm container rounded">
-            <Choice v-if="selectedEvent.Id != 0" v-for="(choice, index) in selectedEvent.Choices"
+            <Choice v-if="selectedEvent.Id != 0" v-for="(choices, index) in selectedEvent.Choices"
                 v-model:selectIndex="editedSelectIndex" v-model:state="editedState" v-model:effect="editedEffect"
-                v-model:scenario="editedScenario" :choice="choice" :selectedEvent="selectedEvent"
+                v-model:scenario="editedScenario" :choices="choices" :selectedEvent="selectedEvent"
                 v-model:editedIndex="editedIndex" :editingIndex="index" :style="`margin-top:${index * 250}px;`" />
         </div>
     </div>

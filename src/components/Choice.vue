@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from '@vue/reactivity';
 import { Tooltip } from 'bootstrap';
-import { onMounted, ref, watch } from 'vue';
-const { choice, selectedEvent, editingIndex } = defineProps(['choice', 'selectedEvent', 'editingIndex'])
+import { onMounted, ref, watch, watchPostEffect } from 'vue';
+const { choices, selectedEvent, editingIndex } = defineProps(['choices', 'selectedEvent', 'editingIndex'])
 const states: { [index: number]: string } = {
     0: '0(失败)',
     1: '1(成功)',
@@ -24,23 +24,41 @@ const currentEditEffect = ref("")
 const textareaDisabledTip = ref("请先选择选项和剧本")
 const choiceNameInputBox = ref(null);
 const textarea = ref(null)
-var textareaTooltip: any = null!
+const inputEffectIndex = computed(() => {
+    return selectedEffect.value + selectedScenario.value
+})
+var textareaTooltip: Tooltip = null!
 
+//用来更新selectedEffect
 function onEffectClick(effect: string) {
     selectedEffect.value = effect
 }
+//用来在切换Effect的时候读取之前编辑的内容
+watch(selectedEffect, (effect) => {
+    var previousEdited = inputEffects.value.get(inputEffectIndex.value)
+    if (previousEdited != undefined)
+        currentEditEffect.value = previousEdited
+    else
+        currentEditEffect.value = effect
+}, {
+    flush: "post"
+})
 function onStateChange(state: number) {
     selectedState.value = states[state]
 }
 function onScenarioChange(scenario: number) {
     selectedScenario.value = scenarios[scenario]
-    var previousEdited = inputEffects.value.get(selectedScenario.value)
-    if (previousEdited == undefined) {
-        inputEffects.value.set(selectedScenario.value, selectedEffect.value)
+    var previousEdited = inputEffects.value.get(inputEffectIndex.value)
+    if (previousEdited == undefined && currentEditEffect.value != '') {
+        inputEffects.value.set(inputEffectIndex.value, selectedEffect.value)
         currentEditEffect.value = selectedEffect.value
-    } else {
+    } else if (previousEdited != undefined) {
         currentEditEffect.value = previousEdited
     }
+}
+function onEditEffectChange() {
+    if (selectedScenario.value == "剧本") return;
+    inputEffects.value.set(inputEffectIndex.value, currentEditEffect.value)
 }
 const isTextareaDisabled = computed(() => {
     return textareaDisabledTip.value != ''
@@ -50,23 +68,30 @@ onMounted(() => {
     textareaTooltip = new Tooltip(textarea.value!);
 });
 watch(currentEditEffect, () => {
-    inputEffects.value.set(selectedScenario.value, currentEditEffect.value)
+    if (selectedScenario.value == "剧本") return;
+    inputEffects.value.set(inputEffectIndex.value, currentEditEffect.value)
+})
+watch([selectedEffect, selectedScenario], ([newerEffect, newerScenario], [elderEffect, elderScenario]) => {
+    if (selectedScenario.value == "剧本") return;
+    if (selectedEffect.value != "" && selectedScenario.value != "剧本" && textareaDisabledTip.value != '') {
+        textareaDisabledTip.value = ''
+        textareaTooltip.hide()
+    }
+    if (elderEffect == newerEffect && newerEffect != '') {
+        inputEffects.value.set(inputEffectIndex.value, selectedEffect.value)
+        inputSelectIndex.value = null
+    }
 })
 watch(selectedEffect, () => {
-    if (selectedScenario.value == "剧本") return;
-    inputEffects.value.set(selectedScenario.value, selectedEffect.value)
-    inputSelectIndex.value = null
+    selectedScenario.value = "剧本"
 })
 watch(selectedEvent, () => {
     selectedState.value = "请选择State"
     selectedEffect.value = ""
     inputSelectIndex.value = null
-})
-watch([selectedEffect, selectedScenario], () => {
-    if (selectedEffect.value != "" && selectedScenario.value != "剧本" && textareaDisabledTip.value != '') {
-        textareaDisabledTip.value = ''
-        textareaTooltip?.dispose()
-    }
+    textareaDisabledTip.value = "请先选择选项和剧本"
+    selectedScenario.value = "剧本"
+    textareaTooltip.show()
 })
 </script>
 <template>
@@ -74,23 +99,26 @@ watch([selectedEffect, selectedScenario], () => {
         <div class="row">
             <div id="effectPart">
                 <div id="effectBox" class="list-group shadow-sm rounded ms-1">
-                    <span v-for="effect in choice.Effects" class="list-group-item list-group-item-action clickable "
-                        :class="{
-                            active: effect != '' && effect == selectedEffect
-                        }" @click="onEffectClick(effect)" :style="`height: ${240 / choice.Effects.length}px;`">
-                        {{ effect }}
-                    </span>
+                    <div v-for="choice in choices">
+                        <span v-for="effect in choice.Effects" class="list-group-item list-group-item-action clickable "
+                            :class="{
+                                active: effect != '' && effect == selectedEffect
+                            }" @click="onEffectClick(effect)" :style="`height: ${240 / choice.Effects.length}px;`">
+                            {{ effect }}
+                        </span>
+                    </div>
                 </div>
             </div>
             <div id="editPart">
                 <input class="form-control" data-bs-toggle="tooltip" title="目前还没决定好是否允许汉化" ref="choiceNameInputBox"
-                    type="text" :value="choice.Option" readonly>
+                    type="text" :value="choices[0].Option" readonly>
                 <div class="input-group">
                     <input type="text" class="form-control" placeholder="Select Index"
                         @change="$emit('update:selectIndex', inputSelectIndex)" v-model="inputSelectIndex"
                         style="margin-top: 2px;">
                     <button id="stateDropdownToggleButton" class="btn btn-outline-primary dropdown-toggle" type="button"
-                        data-bs-toggle="dropdown" style="margin-top: 2px;">{{ selectedState }}</button>
+                        data-bs-toggle="dropdown" style="margin-top: 2px;">{{ selectedState
+                        }}</button>
                     <ul class="dropdown-menu dropdown-menu-end" style="min-width: min-content;">
                         <li v-for="(state, index) in states">
                             <span class="dropdown-item clickable"
@@ -100,7 +128,8 @@ watch([selectedEffect, selectedScenario], () => {
                         </li>
                     </ul>
                     <button id="scenarioDropdownToggleButton" class="btn btn-outline-primary dropdown-toggle"
-                        type="button" data-bs-toggle="dropdown" style="margin-top: 2px;">{{ selectedScenario }}</button>
+                        type="button" data-bs-toggle="dropdown" style="margin-top: 2px;">{{ selectedScenario
+                        }}</button>
                     <ul class="dropdown-menu dropdown-menu-end" style="min-width: min-content;">
                         <li v-for="(scenario, index) in scenarios">
                             <span class="dropdown-item clickable"
@@ -111,7 +140,7 @@ watch([selectedEffect, selectedScenario], () => {
                     </ul>
                 </div>
                 <textarea class="form-control"
-                    @change="inputEffects.set(selectedScenario, currentEditEffect); $emit('update:effect', inputEffects.get(selectedScenario)); $emit('update:editedIndex', editingIndex);"
+                    @change="onEditEffectChange(); $emit('update:effect', inputEffects.get(inputEffectIndex)); $emit('update:editedIndex', editingIndex);"
                     v-model="currentEditEffect" :readonly="isTextareaDisabled"
                     :class="{ disabledTextarea: isTextareaDisabled }" data-bs-toggle="tooltip"
                     :title="textareaDisabledTip" ref="textarea"></textarea>

@@ -12,9 +12,8 @@ function onCategoryChanged(event: any) {
 
 <template>
     <div class="container rounded shadow-sm pb-4">
-        <img id="icon"
-            :src="`https://assets.shuise.net/UmamusumeEventEditor/public/img/icon/chr_icon_${cardId!.toString().substring(0, 4)}_${cardId}_02.png`"
-            width="115" height="128" />
+        <img id="icon" :src="`/img/icon/chr_icon_${cardId!.toString().substring(0, 4)}_${cardId}_02.png`" width="115"
+            height="128" />
         <select id="cardSelect" class="form-select" @change="$emit('update:card')">
             <option>决胜服A</option>
             <option>决胜服B</option>

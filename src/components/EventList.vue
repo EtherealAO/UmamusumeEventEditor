@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { Story } from '@/interfaces/Story';
+import { CustomStory } from '@/interfaces/CustomStory';
 import { shallowReactive } from 'vue';
 
 const { events } = defineProps(['events'])
-const selectedEvent: Story = shallowReactive(new Story())
+const selectedEvent: CustomStory = shallowReactive(new CustomStory())
 
-function onClick(story: Story) {
+function onClick(story: CustomStory) {
     selectedEvent.Apply(story)
 }
 </script>
