@@ -5,6 +5,7 @@ export class CustomChoice {
     SelectIndex: number = 0;
     Scenario: number = 0;
     State: number = 2147483647;
+    OriginalEffect: string = "";
     Effect: string = "";
     Effects: string[] = [];
     constructor(effect: string) {

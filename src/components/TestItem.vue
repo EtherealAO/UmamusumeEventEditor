@@ -12,8 +12,8 @@ import { CustomChoice } from "@/interfaces/CustomChoice";
 const menus = reactive({
     menus: [
         {
-            label: "保存",
-            tip: "到地址栏里",
+            label: "发布",
+            tip: "还没做",
             click: () => {
                 window.open(`/#${Base64.encodeURI(JSON.stringify(editedStory))}`, '_self')
             }
@@ -47,9 +47,9 @@ const isSupport = false;
 const allEvents = isSupport ? supportEvents : characterEvents;
 const events: CustomStory[] = shallowReactive(allEvents[selectedCard.value].concat(allEvents[Number.parseInt(selectedCard.value.toString().substring(0, 4))]))
 var editedStory = new CustomStory().Initialize(selectedEvent, customEvents[selectedEvent.Id]);
-var editedChoice: { [index: string]: CustomChoice }[] = []
+var editedChoice: { [index: string]: CustomChoice }[] = reactive([])
 var editedIndex = ref<number>(0)
-var editedSelectIndex = ref<number>(0)
+var editedSelectIndex = ref<number>(1)
 var editedState = ref<number>()
 var editedEffect = ref<string>()
 var editedScenario = ref<number>()
@@ -96,23 +96,46 @@ function onEventSelected(selected: CustomStory) {
     editedStory = new CustomStory().Initialize(selectedEvent, customEvents[selectedEvent.Id])
     editedChoice = []
     editedIndex.value = 0
-    editedSelectIndex.value = 0
+    editedSelectIndex.value = 1
     editedState.value = undefined
     editedEffect.value = undefined
     editedScenario.value = undefined
 }
 function saveToLocalStorage() {
     if (editedStory.Id == 0) return
-    editedStory.Choices = []
+    editedStory.Name = selectedEvent.Name
+    editedStory.TriggerName = selectedEvent.TriggerName
+    var newerChoices: CustomChoice[][] = []
     for (var i in editedChoice) {
         for (var j in editedChoice[i]) {
-            if (editedStory.Choices[i] == undefined) editedStory.Choices[i] = []
-            console.log(editedChoice[i][j])
-            if (editedStory.Choices[i].indexOf(editedChoice[i][j]) == -1)
-                editedStory.Choices[i].push(editedChoice[i][j])
+            if (newerChoices[i] == undefined) newerChoices[i] = []
+            if (newerChoices[i].indexOf(editedChoice[i][j]) == -1) {
+                var effect = editedChoice[i][j].Effect
+                if (effect != '' && selectedEvent.Choices[i].findIndex(x => x.Effect == effect) == -1) {
+                    newerChoices[i].push(editedChoice[i][j])
+                }
+            }
         }
     }
-    localStorage.setItem(editedStory.Id.toString(), JSON.stringify(editedStory))
+    var previousAdded = localStorage.getItem(editedStory.Id.toString())
+    if (previousAdded == null) {
+        editedStory.Choices = newerChoices
+        localStorage.setItem(editedStory.Id.toString(), JSON.stringify(editedStory))
+    }
+    else {
+        var previousAddedStory: CustomStory = Object.assign(new CustomStory(), JSON.parse(previousAdded))
+        for (var i in newerChoices) {
+            for (var j in newerChoices[i]) {
+                var findIndex = previousAddedStory.Choices[i].findIndex(x => x.Scenario == newerChoices[i][j].Scenario && x.SelectIndex == newerChoices[i][j].SelectIndex)
+                if (findIndex != -1)
+                    previousAddedStory.Choices[i][findIndex] = newerChoices[i][j]
+                else
+                    previousAddedStory.Choices[i].push(newerChoices[i][j])
+            }
+        }
+        localStorage.setItem(editedStory.Id.toString(), JSON.stringify(previousAddedStory))
+    }
+    console.log(`Saved ${JSON.stringify(editedStory)}`)
 }
 </script>
  

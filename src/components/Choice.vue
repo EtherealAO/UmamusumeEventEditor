@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { CustomStory } from '@/interfaces/CustomStory';
 import { computed } from '@vue/reactivity';
 import { Tooltip } from 'bootstrap';
-import { onMounted, ref, watch, watchPostEffect } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 const { choices, selectedEvent, editingIndex } = defineProps(['choices', 'selectedEvent', 'editingIndex'])
 const states: { [index: number]: string } = {
     0: '0(失败)',
@@ -18,7 +19,7 @@ const scenarios: { [index: number]: string } = {
 const selectedState = ref("请选择State")
 const selectedScenario = ref("剧本")
 const selectedEffect = ref("")
-const inputSelectIndex = ref(null)
+const inputSelectIndex = ref(1)
 const inputEffects = ref(new Map<string, string>())
 const currentEditEffect = ref("")
 const textareaDisabledTip = ref("请先选择选项和剧本")
@@ -28,6 +29,7 @@ const inputEffectIndex = computed(() => {
     return selectedEffect.value + selectedScenario.value
 })
 var textareaTooltip: Tooltip = null!
+var choiceNameInputBoxTooltip: Tooltip = null!
 
 //用来更新selectedEffect
 function onEffectClick(effect: string) {
@@ -64,34 +66,56 @@ const isTextareaDisabled = computed(() => {
     return textareaDisabledTip.value != ''
 })
 onMounted(() => {
-    new Tooltip(choiceNameInputBox.value!);
-    textareaTooltip = new Tooltip(textarea.value!);
+    if (choiceNameInputBoxTooltip == null)
+        choiceNameInputBoxTooltip = new Tooltip(choiceNameInputBox.value!);
+    if (textareaTooltip == null)
+        textareaTooltip = new Tooltip(textarea.value!);
 });
 watch(currentEditEffect, () => {
     if (selectedScenario.value == "剧本") return;
     inputEffects.value.set(inputEffectIndex.value, currentEditEffect.value)
 })
 watch([selectedEffect, selectedScenario], ([newerEffect, newerScenario], [elderEffect, elderScenario]) => {
+    if (newerScenario == elderScenario) {
+        textareaTooltip.enable()
+        selectedScenario.value = "剧本"
+        textareaDisabledTip.value = "请先选择选项和剧本"
+        return
+    }
     if (selectedScenario.value == "剧本") return;
     if (selectedEffect.value != "" && selectedScenario.value != "剧本" && textareaDisabledTip.value != '') {
         textareaDisabledTip.value = ''
-        textareaTooltip.hide()
+        textareaTooltip.disable()
     }
     if (elderEffect == newerEffect && newerEffect != '') {
         inputEffects.value.set(inputEffectIndex.value, selectedEffect.value)
-        inputSelectIndex.value = null
+        inputSelectIndex.value = 1
     }
 })
-watch(selectedEffect, () => {
-    selectedScenario.value = "剧本"
-})
 watch(selectedEvent, () => {
+    const previousAddedStoryString = localStorage.getItem(selectedEvent.Id.toString())
+    if (previousAddedStoryString != null) {
+        const previousAddedStory: CustomStory = Object.assign(new CustomStory(), JSON.parse(previousAddedStoryString))
+        if (previousAddedStory != null) {
+            console.log(`Loading custom story ${previousAddedStory.Name}`)
+            for (var i in previousAddedStory.Choices) {
+                for (var j in previousAddedStory.Choices[i]) {
+                    var effect = previousAddedStory.Choices[i][j]
+                    for (var m of selectedEvent.Choices[i][0].Effects) {
+                        var index = `${m}${scenarios[effect.Scenario]}`
+                        var inputEffect = inputEffects.value.get(index)
+                        if (inputEffect == null)
+                            inputEffects.value.set(index, effect.Effect)
+                    }
+                }
+            }
+        }
+    }
     selectedState.value = "请选择State"
     selectedEffect.value = ""
-    inputSelectIndex.value = null
+    inputSelectIndex.value = 1
     textareaDisabledTip.value = "请先选择选项和剧本"
     selectedScenario.value = "剧本"
-    textareaTooltip.show()
 })
 </script>
 <template>
