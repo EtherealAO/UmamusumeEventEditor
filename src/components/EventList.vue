@@ -1,19 +1,11 @@
 <script setup lang="ts">
-import { CustomStory } from '@/interfaces/CustomStory';
-import { shallowReactive } from 'vue';
-
-const { events } = defineProps(['events'])
-const selectedEvent: CustomStory = shallowReactive(new CustomStory())
-
-function onClick(story: CustomStory) {
-    selectedEvent.Apply(story)
-}
+const { events, selectedEvent } = defineProps(['events', 'selectedEvent'])
 </script>
 
 <template>
     <div id="eventList" class="list-group rounded shadow-sm">
         <span id="eventName" class="list-group-item list-group-item-action clickable" v-for="story in events"
-            :key="story.Id" @click="onClick(story); $emit('eventSelected', selectedEvent)"
+            :key="story.Id" @click="selectedEvent.Apply(story); $emit('update:selectedEvent', selectedEvent)"
             :class="{ active: selectedEvent.Id == story.Id }">
             {{ story.Name }}
         </span>

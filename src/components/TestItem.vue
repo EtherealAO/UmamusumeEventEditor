@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, reactive, ref, shallowReactive, watch } from "vue";
+import { inject, isReactive, reactive, ref, shallowReactive, watch, watchPostEffect } from "vue";
 import { Base64 } from 'js-base64';
 import SelectCard from "./SelectCard.vue";
 import EventList from "./EventList.vue";
@@ -8,7 +8,9 @@ import Toast from "./Toast.vue";
 import { CustomStory } from "@/interfaces/CustomStory";
 import { ShowToast } from "@/main";
 import { CustomChoice } from "@/interfaces/CustomChoice";
-
+const supportEvents: { [cardId: number]: CustomStory[]; } = inject('supportEvents')!
+const characterEvents: { [cardId: number]: CustomStory[]; } = inject('characterEvents')!
+const customEvents: { [eventId: number]: CustomStory } = inject('customEvents')!
 const menus = reactive({
     menus: [
         {
@@ -38,21 +40,21 @@ const menus = reactive({
         }
     ]
 })
-const selectedEvent = shallowReactive(new CustomStory())
+
 const selectedCard = ref(103301)
-const supportEvents: { [cardId: number]: CustomStory[]; } = inject('supportEvents')!
-const characterEvents: { [cardId: number]: CustomStory[]; } = inject('characterEvents')!
-const customEvents: { [eventId: number]: CustomStory } = inject('customEvents')!
+const selectedEvent = shallowReactive(new CustomStory())
 const isSupport = false;
 const allEvents = isSupport ? supportEvents : characterEvents;
 const events: CustomStory[] = shallowReactive(allEvents[selectedCard.value].concat(allEvents[Number.parseInt(selectedCard.value.toString().substring(0, 4))]))
-var editedStory = new CustomStory().Initialize(selectedEvent, customEvents[selectedEvent.Id]);
+
+var editedStory = shallowReactive(new CustomStory());
 var editedChoice: { [index: string]: CustomChoice }[] = reactive([])
 var editedIndex = ref<number>(0)
 var editedSelectIndex = ref<number>(1)
 var editedState = ref<number>()
 var editedEffect = ref<string>()
 var editedScenario = ref<number>()
+var selectedEffect = ref<string>("")
 watch(editedEffect, () => {
     if (editedScenario.value == undefined || editedEffect.value == undefined) return;
     var index = editedEffect.value + editedScenario.value.toString()
@@ -61,17 +63,14 @@ watch(editedEffect, () => {
     var choice = editedChoice[editedIndex.value][index]
     if (choice == undefined) {
         choice = new CustomChoice(editedEffect.value)
-        choice.SelectIndex = editedSelectIndex.value
-        choice.Scenario = editedScenario.value
-        if (editedState.value != undefined)
-            choice.State = editedState.value
     } else {
         choice.Effect = editedEffect.value
-        choice.SelectIndex = editedSelectIndex.value
-        choice.Scenario = editedScenario.value
-        if (editedState.value != undefined)
-            choice.State = editedState.value
     }
+    choice.SelectIndex = editedSelectIndex.value
+    choice.Scenario = editedScenario.value
+    choice.OriginalEffect = selectedEffect.value
+    if (editedState.value != undefined)
+        choice.State = editedState.value
     editedChoice[editedIndex.value][index] = choice
 })
 function onCategoryChanged(category: string) {
@@ -90,21 +89,20 @@ function onCategoryChanged(category: string) {
             break;
     }
 }
-function onEventSelected(selected: CustomStory) {
+watch(selectedEvent, () => {
     saveToLocalStorage()
-    selectedEvent.Apply(selected)
-    editedStory = new CustomStory().Initialize(selectedEvent, customEvents[selectedEvent.Id])
+    editedStory.Apply(selectedEvent)
     editedChoice = []
     editedIndex.value = 0
     editedSelectIndex.value = 1
     editedState.value = undefined
     editedEffect.value = undefined
     editedScenario.value = undefined
-}
+});
 function saveToLocalStorage() {
     if (editedStory.Id == 0) return
-    editedStory.Name = selectedEvent.Name
-    editedStory.TriggerName = selectedEvent.TriggerName
+    //editedStory.Name = selectedEvent.Name
+    //editedStory.TriggerName = selectedEvent.TriggerName
     var newerChoices: CustomChoice[][] = []
     for (var i in editedChoice) {
         for (var j in editedChoice[i]) {
@@ -119,8 +117,10 @@ function saveToLocalStorage() {
     }
     var previousAdded = localStorage.getItem(editedStory.Id.toString())
     if (previousAdded == null) {
-        editedStory.Choices = newerChoices
-        localStorage.setItem(editedStory.Id.toString(), JSON.stringify(editedStory))
+        if (newerChoices.length > 0) {
+            editedStory.Choices = newerChoices
+            localStorage.setItem(editedStory.Id.toString(), JSON.stringify(editedStory))
+        }
     }
     else {
         var previousAddedStory: CustomStory = Object.assign(new CustomStory(), JSON.parse(previousAdded))
@@ -144,13 +144,14 @@ function saveToLocalStorage() {
         <div id="leftPart" class="shadow-sm container rounded">
             <SelectCard :cardId="selectedCard" v-model:card="selectedCard"
                 @categoryChanged="(category) => onCategoryChanged(category)" />
-            <EventList :events="events" @eventSelected="(selected) => onEventSelected(selected)" />
+            <EventList :events="events" v-model:selectedEvent="selectedEvent" />
         </div>
         <div id="rightPart" class="shadow-sm container rounded">
-            <Choice v-if="selectedEvent.Id != 0" v-for="(choices, index) in selectedEvent.Choices"
+            <Choice v-if="selectedEvent.Id != 0" v-for="(choices, index) in editedStory.Choices"
                 v-model:selectIndex="editedSelectIndex" v-model:state="editedState" v-model:effect="editedEffect"
-                v-model:scenario="editedScenario" :choices="choices" :selectedEvent="selectedEvent"
-                v-model:editedIndex="editedIndex" :editingIndex="index" :style="`margin-top:${index * 250}px;`" />
+                v-model:selectedEffect="selectedEffect" v-model:scenario="editedScenario" :choices="choices"
+                :selectedEvent="selectedEvent" v-model:editedIndex="editedIndex" :editingIndex="index"
+                :style="`margin-top:${index * 250}px;`" />
         </div>
     </div>
 </template>

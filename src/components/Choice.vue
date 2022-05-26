@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { CustomStory } from '@/interfaces/CustomStory';
-import { computed } from '@vue/reactivity';
+import { computed, isRef } from '@vue/reactivity';
 import { Tooltip } from 'bootstrap';
-import { onMounted, ref, watch } from 'vue';
+import { nextTick, onMounted, onUpdated, ref, watch } from 'vue';
 const { choices, selectedEvent, editingIndex } = defineProps(['choices', 'selectedEvent', 'editingIndex'])
 const states: { [index: number]: string } = {
     0: '0(失败)',
@@ -28,8 +28,19 @@ const textarea = ref(null)
 const inputEffectIndex = computed(() => {
     return selectedEffect.value + selectedScenario.value
 })
+//#region Tooltip
 var textareaTooltip: Tooltip = null!
 var choiceNameInputBoxTooltip: Tooltip = null!
+function initializeTooltip() {
+    if (choiceNameInputBoxTooltip == null)
+        choiceNameInputBoxTooltip = new Tooltip(choiceNameInputBox.value!);
+    if (textareaTooltip == null)
+        textareaTooltip = new Tooltip(textarea.value!);
+}
+const isTextareaDisabled = computed(() => {
+    return textareaDisabledTip.value != ''
+})
+//#endregion
 
 //用来更新selectedEffect
 function onEffectClick(effect: string) {
@@ -62,21 +73,12 @@ function onEditEffectChange() {
     if (selectedScenario.value == "剧本") return;
     inputEffects.value.set(inputEffectIndex.value, currentEditEffect.value)
 }
-const isTextareaDisabled = computed(() => {
-    return textareaDisabledTip.value != ''
-})
-onMounted(() => {
-    if (choiceNameInputBoxTooltip == null)
-        choiceNameInputBoxTooltip = new Tooltip(choiceNameInputBox.value!);
-    if (textareaTooltip == null)
-        textareaTooltip = new Tooltip(textarea.value!);
-});
 watch(currentEditEffect, () => {
     if (selectedScenario.value == "剧本") return;
     inputEffects.value.set(inputEffectIndex.value, currentEditEffect.value)
 })
 watch([selectedEffect, selectedScenario], ([newerEffect, newerScenario], [elderEffect, elderScenario]) => {
-    if (newerScenario == elderScenario) {
+    if (newerScenario == elderScenario && newerScenario == "剧本") {
         textareaTooltip.enable()
         selectedScenario.value = "剧本"
         textareaDisabledTip.value = "请先选择选项和剧本"
@@ -93,30 +95,42 @@ watch([selectedEffect, selectedScenario], ([newerEffect, newerScenario], [elderE
     }
 })
 watch(selectedEvent, () => {
-    const previousAddedStoryString = localStorage.getItem(selectedEvent.Id.toString())
-    if (previousAddedStoryString != null) {
-        const previousAddedStory: CustomStory = Object.assign(new CustomStory(), JSON.parse(previousAddedStoryString))
-        if (previousAddedStory != null) {
-            console.log(`Loading custom story ${previousAddedStory.Name}`)
-            for (var i in previousAddedStory.Choices) {
-                for (var j in previousAddedStory.Choices[i]) {
-                    var effect = previousAddedStory.Choices[i][j]
-                    for (var m of selectedEvent.Choices[i][0].Effects) {
-                        var index = `${m}${scenarios[effect.Scenario]}`
-                        var inputEffect = inputEffects.value.get(index)
-                        if (inputEffect == null)
-                            inputEffects.value.set(index, effect.Effect)
-                    }
-                }
-            }
-        }
-    }
+    console.log(`clear on switch story`)
+    inputEffects.value.clear()
     selectedState.value = "请选择State"
     selectedEffect.value = ""
     inputSelectIndex.value = 1
     textareaDisabledTip.value = "请先选择选项和剧本"
     selectedScenario.value = "剧本"
 })
+function loadExistCustomStory() {
+    const previousAddedStoryString = localStorage.getItem(selectedEvent.Id.toString())
+    if (previousAddedStoryString != null) {
+        const previousAddedStory: CustomStory = Object.assign(new CustomStory(), JSON.parse(previousAddedStoryString))
+        if (previousAddedStory != null) {
+            console.log('clear inputEffects before load')
+            inputEffects.value.clear()
+            console.log(`Loading custom story ${previousAddedStory.Name}`)
+            for (var i in previousAddedStory.Choices) {
+                for (var j in previousAddedStory.Choices[i]) {
+                    var effect = previousAddedStory.Choices[i][j]
+                    for (var m of selectedEvent.Choices[i][0].Effects) {
+                        if (m != effect.OriginalEffect) continue
+                        var index = `${m}${scenarios[effect.Scenario]}`
+                        inputEffects.value.set(index, effect.Effect)
+                        console.log(`load effect ${effect.Effect}`)
+                        console.log(`after load ${inputEffects.value.size}`)
+                    }
+                }
+            }
+        }
+    }
+}
+onMounted(() => {
+    initializeTooltip()
+    loadExistCustomStory()
+});
+onUpdated(() => loadExistCustomStory())
 </script>
 <template>
     <div id="choice">
@@ -127,7 +141,8 @@ watch(selectedEvent, () => {
                         <span v-for="effect in choice.Effects" class="list-group-item list-group-item-action clickable "
                             :class="{
                                 active: effect != '' && effect == selectedEffect
-                            }" @click="onEffectClick(effect)" :style="`height: ${240 / choice.Effects.length}px;`">
+                            }" @click="onEffectClick(effect); $emit('update:selectedEffect', effect)"
+                            :style="`height: ${240 / choice.Effects.length}px;`">
                             {{ effect }}
                         </span>
                     </div>
