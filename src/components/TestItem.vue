@@ -8,9 +8,9 @@ import Toast from "./Toast.vue";
 import { CustomStory } from "@/interfaces/CustomStory";
 import { ShowToast } from "@/main";
 import { CustomChoice } from "@/interfaces/CustomChoice";
+import { Card } from "@/interfaces/Card";
 const supportEvents: { [cardId: number]: CustomStory[]; } = inject('supportEvents')!
 const characterEvents: { [cardId: number]: CustomStory[]; } = inject('characterEvents')!
-const customEvents: { [eventId: number]: CustomStory } = inject('customEvents')!
 const menus = reactive({
     menus: [
         {
@@ -41,12 +41,12 @@ const menus = reactive({
     ]
 })
 
-const selectedCard = ref(103301)
+const selectedCard = ref(new Card())
 const selectedEvent = shallowReactive(new CustomStory())
 const isSupport = false;
 const allEvents = isSupport ? supportEvents : characterEvents;
-const events: CustomStory[] = shallowReactive(allEvents[selectedCard.value].concat(allEvents[Number.parseInt(selectedCard.value.toString().substring(0, 4))]))
 
+var events: CustomStory[] = shallowReactive([])
 var editedStory = shallowReactive(new CustomStory());
 var editedChoice: { [index: string]: CustomChoice }[] = reactive([])
 var editedIndex = ref<number>(0)
@@ -55,6 +55,18 @@ var editedState = ref<number>()
 var editedEffect = ref<string>()
 var editedScenario = ref<number>()
 var selectedEffect = ref<string>("")
+watch(selectedCard, () => {
+    events.length = 0
+    events.push(...allEvents[selectedCard.value.Id].concat(allEvents[Number.parseInt(selectedCard.value.Id.toString().substring(0, 4))]))
+    selectedEvent.Apply(new CustomStory())
+    editedStory.Apply(new CustomStory())
+    editedChoice = []
+    editedIndex.value = 0
+    editedSelectIndex.value = 1
+    editedState.value = undefined
+    editedEffect.value = undefined
+    editedScenario.value = undefined
+})
 watch(editedEffect, () => {
     if (editedScenario.value == undefined || editedEffect.value == undefined) return;
     var index = editedEffect.value + editedScenario.value.toString()
@@ -75,17 +87,31 @@ watch(editedEffect, () => {
 })
 function onCategoryChanged(category: string) {
     events.length = 0
+    if (selectedCard.value.Id == 0) return
     switch (category) {
         case "all":
-            events.push(...allEvents[selectedCard.value].concat(allEvents[Number.parseInt(selectedCard.value.toString().substring(0, 4))]))
+            events.push(...allEvents[selectedCard.value.Id].concat(allEvents[Number.parseInt(selectedCard.value.Id.toString().substring(0, 4))]))
             break;
         case "special":
-            events.push(...allEvents[selectedCard.value])
+            events.push(...allEvents[selectedCard.value.Id])
             break;
         case "common":
-            events.push(...allEvents[Number.parseInt(selectedCard.value.toString().substring(0, 4))])
+            events.push(...allEvents[Number.parseInt(selectedCard.value.Id.toString().substring(0, 4))])
             break;
         case "universal":
+            events.push(...allEvents[0].concat(allEvents[1]).concat(allEvents[2]).concat(allEvents[4]))
+            break;
+        case "system":
+            events.push(...allEvents[0])
+            break;
+        case "ura":
+            events.push(...allEvents[1])
+            break;
+        case "aoharu":
+            events.push(...allEvents[2])
+            break;
+        case "climax":
+            events.push(...allEvents[4])
             break;
     }
 }
@@ -142,8 +168,7 @@ function saveToLocalStorage() {
 <template>
     <div id="eventEditor" class="shadow p-3 mb-5 bg-body rounded vue3-menus-item" v-menus:right="menus">
         <div id="leftPart" class="shadow-sm container rounded">
-            <SelectCard :cardId="selectedCard" v-model:card="selectedCard"
-                @categoryChanged="(category) => onCategoryChanged(category)" />
+            <SelectCard v-model:card="selectedCard" @categoryChanged="(category) => onCategoryChanged(category)" />
             <EventList :events="events" v-model:selectedEvent="selectedEvent" />
         </div>
         <div id="rightPart" class="shadow-sm container rounded">

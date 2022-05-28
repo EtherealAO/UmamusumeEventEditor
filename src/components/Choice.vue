@@ -97,6 +97,8 @@ watch([selectedEffect, selectedScenario], ([newerEffect, newerScenario], [elderE
 watch(selectedEvent, () => {
     console.log(`clear on switch story`)
     inputEffects.value.clear()
+    console.log(`reload on switch story`)
+    loadExistCustomStory()
     selectedState.value = "请选择State"
     selectedEffect.value = ""
     inputSelectIndex.value = 1
@@ -110,11 +112,12 @@ function loadExistCustomStory() {
         if (previousAddedStory != null) {
             console.log('clear inputEffects before load')
             inputEffects.value.clear()
-            console.log(`Loading custom story ${previousAddedStory.Name}`)
+            console.log(`Loading custom story ${previousAddedStory.Id}`)
             for (var i in previousAddedStory.Choices) {
                 for (var j in previousAddedStory.Choices[i]) {
                     var effect = previousAddedStory.Choices[i][j]
                     for (var m of selectedEvent.Choices[i][0].Effects) {
+                        console.log(m + ' ' + effect.OriginalEffect)
                         if (m != effect.OriginalEffect) continue
                         var index = `${m}${scenarios[effect.Scenario]}`
                         inputEffects.value.set(index, effect.Effect)
@@ -130,7 +133,7 @@ onMounted(() => {
     initializeTooltip()
     loadExistCustomStory()
 });
-onUpdated(() => loadExistCustomStory())
+//onUpdated(() => loadExistCustomStory())
 </script>
 <template>
     <div id="choice">

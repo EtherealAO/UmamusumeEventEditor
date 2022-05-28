@@ -5,6 +5,7 @@ import Menus from 'vue3-menus';
 import App from "./App.vue";
 import { CustomStory } from "./interfaces/CustomStory";
 import { CustomChoice } from "./interfaces/CustomChoice";
+import type { Card } from "./interfaces/Card";
 
 (async () => {
     var res = await fetch("/data/deserialized/editorevents.json")
@@ -49,6 +50,12 @@ import { CustomChoice } from "./interfaces/CustomChoice";
         if (customEventJSON == null) continue;
         customEvents[Number.parseInt(customEventId)] = Object.assign(new CustomStory(), JSON.parse(customEventJSON))
     }
+    var cards: Card[] = [];
+    res = await fetch("/data/deserialized/editorcards.json")
+    json = await res.json()
+    for (var card of json) {
+        cards.push(card)
+    }
 
     const app = createApp(App);
     app.config.globalProperties.supportEvents = supportEvents;
@@ -57,6 +64,8 @@ import { CustomChoice } from "./interfaces/CustomChoice";
     app.provide('characterEvents', app.config.globalProperties.characterEvents)
     app.config.globalProperties.customEvents = customEvents;
     app.provide('customEvents', app.config.globalProperties.customEvents)
+    app.config.globalProperties.cards = cards;
+    app.provide('cards', app.config.globalProperties.cards)
 
     app.use(Menus);
     app.mount("#app");

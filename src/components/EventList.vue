@@ -7,7 +7,7 @@ const { events, selectedEvent } = defineProps(['events', 'selectedEvent'])
         <span id="eventName" class="list-group-item list-group-item-action clickable" v-for="story in events"
             :key="story.Id" @click="selectedEvent.Apply(story); $emit('update:selectedEvent', selectedEvent)"
             :class="{ active: selectedEvent.Id == story.Id }">
-            {{ story.Name }}
+            {{ story.Name }}({{ story.Id }})
         </span>
     </div>
 </template>
@@ -17,6 +17,8 @@ div#eventList {
     /* background-color: aqua; */
     margin-top: 20px;
     margin-bottom: 20px;
+    min-width: 316.67px;
+    min-height: 500px;
     max-height: 500px;
     overflow: hidden;
     overflow-y: auto;
