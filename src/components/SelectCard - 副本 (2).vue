@@ -1,40 +1,51 @@
 <script setup lang="ts">
 import type { Card } from '@/interfaces/Card';
-import { watch, inject, ref, watchEffect, onMounted } from 'vue';
-const cards = inject<Card[]>('cards')!
+import { watch, inject, ref, watchEffect } from 'vue';
+const cards = inject<Card[]>('cards')
 const defaultIcon = '/img/icon/chr_icon_0000.png'
 const runningStyles = ['逃', '先', '差', '追']
-const distanceProps = ['短', '英', '中', '长']
 
 const filteredCards = ref<Card[]>([])
 const filterRunningStyle = ref<{ [runningStyle: string]: number[]; }>({})
-const filterDistanceProps = ref<{ [distance: string]: number[]; }>({})
 for (var runningStyle of runningStyles) filterRunningStyle.value[runningStyle] = [0, 0, 0, 0, 0, 0, 0]
-for (var distance of distanceProps) filterDistanceProps.value[distance] = [0, 0, 0, 0, 0, 0, 0]
 var cardSelection = ref<Card>();
 var categorySelection = ref("all")
 
 watchEffect(() => {
+    if (cards == undefined) return
     filteredCards.value.length = 0
+    //for (var i in filterRunningStyle.value) {
+    //    for (var j of filterRunningStyle.value[i]) {
+    //        filteredCards.value.push(...cards.filter((element) => element.ProperRunningStyle[i] == j && filteredCards.value.indexOf(element) == -1))
+    //    }
+    //}
     for (var card of cards) {
-        if (filterProper(card, card.ProperRunningStyle, filterRunningStyle.value) &&
-            filterProper(card, card.ProperDistance, filterDistanceProps.value)) {
+        var pick = true
+        //for (var runningStyle in filterRunningStyle.value) {
+        //    for (var index of filterRunningStyle.value[runningStyle]) {
+        //        if (filterRunningStyle.value[runningStyle][index - 1] == undefined) continue
+        //        if (!(filteredCards.value.indexOf(card) == -1 && card.ProperRunningStyle[runningStyle] == filterRunningStyle.value[runningStyle][index - 1])) {
+        //            pick = false
+        //        } else {
+        //            console.log(`${runningStyle} ${filterRunningStyle.value[runningStyle][index - 1]}`)
+        //        }
+        //    }
+        //}
+        pick = test(card, filterRunningStyle.value)
+        if (pick) {
             filteredCards.value.push(card)
         }
     }
-    //if (!Object.values(filterRunningStyle.value).flatMap(x => x).some(x => x != 0)) {
-    //    filteredCards.value.length = 0
-    //    filteredCards.value.push(...cards)
-    //}
 })
-function filterProper(card: Card, filterType: any, dic: any) {
+function test(card: Card, dic: any) {
     var pick = true
     for (var type in dic) {
         for (var index of dic[type]) {
             if (dic[type][index - 1] == undefined) continue
-            //如果是==就是精确匹配，>=就是包含及以上
-            if (!(filteredCards.value.indexOf(card) == -1 && filterType[type] >= dic[type][index - 1])) {
+            if (!(filteredCards.value.indexOf(card) == -1 && card.ProperRunningStyle[type] == dic[type][index - 1])) {
                 pick = false
+            } else {
+                console.log(`${type} ${dic[type][index - 1]}`)
             }
         }
     }
@@ -130,8 +141,8 @@ function getProperText(proper: number) {
             </div>
             <div class="offcanvas-body">
                 <div class="container">
-                    按跑法适性：<br />
-                    <div v-for="i in runningStyles" class="dropdown dropdown-props" :id="i">
+                    按适性：<br />
+                    <div v-for="i in runningStyles" class="dropdown dropdown-running-style" :id="i">
                         <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-auto-close="outside"
                             :id="`dropdownMenu${i}`" data-bs-toggle="dropdown" aria-expanded="false">
                             {{ i }}
@@ -142,25 +153,6 @@ function getProperText(proper: number) {
                                     <input class="form-check-input" type="checkbox" role="switch"
                                         :id="getProperText(j + 1)"
                                         @change="filterRunningStyle[i][j] = filterRunningStyle[i][j] == 0 ? j + 1 : 0">
-                                    <label class="form-check-label" :for="getProperText(j + 1)">{{ getProperText(j + 1)
-                                    }}</label>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
-                    <br />
-                    按距离适性：<br />
-                    <div v-for="i in distanceProps" class="dropdown dropdown-props" :id="i">
-                        <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-auto-close="outside"
-                            :id="`dropdownMenu${i}`" data-bs-toggle="dropdown" aria-expanded="false">
-                            {{ i }}
-                        </button>
-                        <ul class="dropdown-menu" :aria-labelledby="`dropdownMenu${i}`">
-                            <li v-for="j in Array.from(Array(7).keys()).reverse()">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" role="switch"
-                                        :id="getProperText(j + 1)"
-                                        @change="filterDistanceProps[i][j] = filterDistanceProps[i][j] == 0 ? j + 1 : 0">
                                     <label class="form-check-label" :for="getProperText(j + 1)">{{ getProperText(j + 1)
                                     }}</label>
                                 </div>
@@ -208,7 +200,7 @@ select#categorySelect {
     z-index: 1100;
 }
 
-.dropdown.dropdown-props {
+.dropdown.dropdown-running-style {
     display: inline;
     margin-left: 20px;
 }

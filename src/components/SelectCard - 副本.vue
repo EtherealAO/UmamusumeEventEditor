@@ -17,28 +17,25 @@ var categorySelection = ref("all")
 watchEffect(() => {
     filteredCards.value.length = 0
     for (var card of cards) {
-        if (filterProper(card, card.ProperRunningStyle, filterRunningStyle.value) &&
-            filterProper(card, card.ProperDistance, filterDistanceProps.value)) {
+        if (filterProper(card, card.ProperRunningStyle, filterRunningStyle.value)) {
+            filteredCards.value.push(card)
+        }
+        if (filterProper(card, card.ProperDistance, filterDistanceProps.value)) {
             filteredCards.value.push(card)
         }
     }
-    //if (!Object.values(filterRunningStyle.value).flatMap(x => x).some(x => x != 0)) {
-    //    filteredCards.value.length = 0
-    //    filteredCards.value.push(...cards)
-    //}
+    if (filteredCards.value.length == 0) filteredCards.value.push(...cards)
 })
 function filterProper(card: Card, filterType: any, dic: any) {
-    var pick = true
     for (var type in dic) {
         for (var index of dic[type]) {
             if (dic[type][index - 1] == undefined) continue
-            //如果是==就是精确匹配，>=就是包含及以上
-            if (!(filteredCards.value.indexOf(card) == -1 && filterType[type] >= dic[type][index - 1])) {
-                pick = false
+            if (filteredCards.value.indexOf(card) == -1 && filterType[type] >= dic[type][index - 1]) {
+                return true
             }
         }
     }
-    return pick
+    return false
 }
 function onCategoryChanged(event: any) {
     categorySelection.value = event.target.value
