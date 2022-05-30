@@ -5,20 +5,22 @@ const cards = inject<Card[]>('cards')!
 const defaultIcon = '/img/icon/chr_icon_0000.png'
 const runningStyles = ['逃', '先', '差', '追']
 const distanceProps = ['短', '英', '中', '长']
+const groundProps = ['芝', '泥']
 
 const filteredCards = ref<Card[]>([])
 const filterRunningStyle = ref<{ [runningStyle: string]: number[]; }>({})
 const filterDistanceProps = ref<{ [distance: string]: number[]; }>({})
-for (var runningStyle of runningStyles) filterRunningStyle.value[runningStyle] = [0, 0, 0, 0, 0, 0, 0]
-for (var distance of distanceProps) filterDistanceProps.value[distance] = [0, 0, 0, 0, 0, 0, 0]
+const filterGroundProps = ref<{ [ground: string]: number[]; }>({})
 var cardSelection = ref<Card>();
 var categorySelection = ref("all")
+initFilter()
 
 watchEffect(() => {
     filteredCards.value.length = 0
     for (var card of cards) {
         if (filterProper(card, card.ProperRunningStyle, filterRunningStyle.value) &&
-            filterProper(card, card.ProperDistance, filterDistanceProps.value)) {
+            filterProper(card, card.ProperDistance, filterDistanceProps.value) &&
+            filterProper(card, card.ProperGround, filterGroundProps.value)) {
             filteredCards.value.push(card)
         }
     }
@@ -39,6 +41,12 @@ function filterProper(card: Card, filterType: any, dic: any) {
         }
     }
     return pick
+}
+function initFilter() {
+    for (var runningStyle of runningStyles) filterRunningStyle.value[runningStyle] = [0, 0, 0, 0, 0, 0, 0]
+    for (var distance of distanceProps) filterDistanceProps.value[distance] = [0, 0, 0, 0, 0, 0, 0]
+    for (var ground of groundProps) filterGroundProps.value[ground] = [0, 0, 0, 0, 0, 0, 0]
+    document.querySelectorAll('.form-check-input').forEach((x: any) => x.checked = false)
 }
 function onCategoryChanged(event: any) {
     categorySelection.value = event.target.value
@@ -167,7 +175,29 @@ function getProperText(proper: number) {
                             </li>
                         </ul>
                     </div>
+                    <br />
+                    按场地适性：<br />
+                    <div v-for="i in groundProps" class="dropdown dropdown-props" :id="i">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-auto-close="outside"
+                            :id="`dropdownMenu${i}`" data-bs-toggle="dropdown" aria-expanded="false">
+                            {{ i }}
+                        </button>
+                        <ul class="dropdown-menu" :aria-labelledby="`dropdownMenu${i}`">
+                            <li v-for="j in Array.from(Array(7).keys()).reverse()">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch"
+                                        :id="getProperText(j + 1)"
+                                        @change="filterGroundProps[i][j] = filterGroundProps[i][j] == 0 ? j + 1 : 0">
+                                    <label class="form-check-label" :for="getProperText(j + 1)">{{ getProperText(j + 1)
+                                    }}</label>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
+            </div>
+            <div class="offcanvas-footer">
+                <button id="reset-button" type="reset" class="btn btn-danger" @click="initFilter">重置</button>
             </div>
         </div>
     </div>
@@ -206,6 +236,12 @@ select#categorySelect {
 
 #filterOffcanvas {
     z-index: 1100;
+}
+
+#reset-button {
+    float: right;
+    margin-right: 10px;
+    margin-bottom: 10px;
 }
 
 .dropdown.dropdown-props {
